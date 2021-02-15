@@ -13,7 +13,7 @@ void setup() {
 void loop() {
   servo1.write(50);     //Ángulos entre 50 y 130 para la dirección 
   delay(1000);            // 50 para izquierda y 130 para derecha
-  servo1.write(90);
+  servo1.write(90);       // 90 ángulo central
   delay(1000);
   servo1.write(130);
   delay(1000);
