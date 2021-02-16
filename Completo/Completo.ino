@@ -17,6 +17,7 @@ Adafruit_MLX90614 mlx = Adafruit_MLX90614();
 
 //--------------------------- Variables ---------------------------------------------------
 int recibir[]={0,90,0,0};
+int contador = 0;
 
 //--------------------------- Funciones ---------------------------------------------------
 void forwardstep1() {   // you can change these to DOUBLE or INTERLEAVE or MICROSTEP!
@@ -47,12 +48,25 @@ void loop() {
  if(Serial.available()>3){      // recibimos los datos del serial y los guardamos en el array
    if(Serial.read()==0xFF){
        recibir[1] = Serial.read(), recibir[2] = Serial.read(); recibir[3] = Serial.read();
+       Serial.println(mlx.readAmbientTempC());
+       Serial.println(mlx.readObjectTempC());
+       Serial.flush();
        recibir[3] = map(recibir[3],0,200,-2000,2000);
        stepper1.moveTo(recibir[3]);
      }
+ }
+ else{
+     if(contador == 100){
+      //Serial.print(temp_obj);
+      //Serial.print(temp_amb);
+  //    Serial.println(255);
+
+      contador=0;
+    }
  }
   servo1.write(recibir[1]);
   servo2.write(recibir[2]);
   stepper1.run();
   delay(15);
+  contador++; 
 }
