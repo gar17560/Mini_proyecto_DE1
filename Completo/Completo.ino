@@ -17,11 +17,16 @@ AF_DCMotor motor3(3);
 AF_Stepper motor1(200, 1);
 Adafruit_MLX90614 mlx = Adafruit_MLX90614();
 
+#define encoder1 A0
+#define encoder2 A1
+
 //--------------------------- Variables ---------------------------------------------------
 int recibir[]={0,90,0,0,0};
 int contador = 0;
 int vel_dc = 0;
 int memoria_dc = 0;
+float rpm1 = 0;
+float rpm2 = 0;
 
 //--------------------------- Funciones ---------------------------------------------------
 void forwardstep1() {   // you can change these to DOUBLE or INTERLEAVE or MICROSTEP!
@@ -42,6 +47,8 @@ void setup() {
   servo2.attach(10);
   stepper1.setSpeed(30);      // Stepper
   stepper1.setAcceleration(200.0);
+  pinMode(encoder1,INPUT);
+  pinMode(encoder2,INPUT);
   //stepper1.moveTo(500);
 }
  
@@ -56,13 +63,15 @@ void loop() {
        recibir[5] = Serial.read();
        Serial.println(mlx.readAmbientTempC());
        Serial.println(mlx.readObjectTempC());
+       Serial.println(rpm1);
+       Serial.println(rpm2);
        
        // stepper
        recibir[3] = map(recibir[3],0,200,-2000,2000);
        stepper1.moveTo(recibir[3]);
        // DC
        recibir[5] = map(recibir[5],30,100,140,255);
-       if (recibir[4] == 1){
+       if (recibir[4] == 1){                            // Adelante
         if (memoria_dc == 3){
           motor4.run(RELEASE);
           motor3.run(RELEASE);
@@ -77,12 +86,12 @@ void loop() {
         }
 
        }
-       else if (recibir[4] == 2){
+       else if (recibir[4] == 2){                           // Parar
         motor4.run(RELEASE);
         motor3.run(RELEASE);
         delay(200);
        }
-       else if (recibir[4] == 3){
+       else if (recibir[4] == 3){                           // Atras
         if (memoria_dc == 1){
           motor4.run(RELEASE);
           motor3.run(RELEASE);
@@ -100,10 +109,39 @@ void loop() {
        Serial.flush();
      }
  }
+  if (recibir[4] == 1 || recibir[4] == 3){
+    rpm1 = calcular_rpm(encoder1);
+    rpm2 = calcular_rpm(encoder2);
+    if (rpm1>200){
+      rpm1=200;
+    }
+    if (rpm2>200){
+      rpm2=200;
+    }
+  }
+  else {
+    rpm1 = 0;
+    rpm2 = 0;
+  }
 
   servo1.write(recibir[1]);
   servo2.write(recibir[2]);
   stepper1.run();
   delay(15);
   contador++; 
+}
+
+
+float calcular_rpm(int pin){
+  unsigned long duracion1[] = {0,0,0,0};
+  for (int k=0;k<=3;k++){
+    duracion1[k] = pulseIn(pin,LOW);  
+  }
+  float promedio1 = (duracion1[0]+duracion1[1]+duracion1[2])/(3000);   //tiempo en ms
+  float promedio2 = (promedio1 + duracion1[3])/2000;                   //tiempo en s
+  //Serial.println(promedio2);
+  float rpm = (0.5235*9549.3)/(3*promedio2);                            // rad/s  ->> RPM      
+  //Serial.print("RPM:  ");
+  //Serial.println(rpm);
+  return rpm;
 }
